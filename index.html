@@ -492,9 +492,7 @@
             "Tipp: Konzentriere dich zuerst auf den innersten Ring und arbeite dich nach außen vor.",
             "Tipp: Achte darauf, wie sich gekoppelte Nachbarringe bei Drehungen entgegengesetzt bewegen.",
             "Tipp: Nutze den roten 12-Uhr-Pfeil als exakte Visierlinie für alle vier Kanäle.",
-            "Tipp: Wenn zwei Ringe parallel laufen, suche den Ring, der nur einen von beiden steuert.",
-            "Tipp: Nutze den 'Rückgängig'-Button, um Korrekturen ohne Abzug vorzunehmen.",
-            "Tipp: Manchmal lohnt es sich, einen Ring absichtlich falsch zu drehen, um den Nachbarn mitzunehmen."
+            "Tipp: Nutze den 'Rückgängig'-Button, um Korrekturen ohne Abzug vorzunehmen."
         ];
 
         let particles = [];
@@ -529,20 +527,28 @@
 
             gearMatrix = Array(4).fill(0).map(() => [0,0,0,0]);
             
+            // Level-basierte, kontrollierte Schwierigkeitssteigerung
             if (lvl === 1) {
-                // Extrem einfaches Setup für Level 1: Keine störenden Neben-Kopplungen, jeder Ring ist isoliert (nur sich selbst)
+                // Level 1: Vollständig isolierte Ringe (keine Kopplung)
                 for(let i=0; i<4; i++) {
                     gearMatrix[i][i] = 1;
                 }
             } else if (lvl === 2) {
-                // Sehr zahme Kopplung für Level 2
+                // Level 2: Sehr sanfte Kopplung zum Nachbarn
                 for(let i=0; i<4; i++) {
                     gearMatrix[i][i] = 1;
                     let neighbor = (i + 1) % 4;
                     gearMatrix[i][neighbor] = 0.5;
                 }
+            } else if (lvl <= 4) {
+                // Level 3-4: Moderate Kopplung
+                for(let i=0; i<4; i++) {
+                    gearMatrix[i][i] = 1;
+                    let neighbor = (i + 1) % 4;
+                    gearMatrix[i][neighbor] = (i % 2 === 0 ? 0.5 : -0.5);
+                }
             } else {
-                // Ab Level 3 wie gewohnt anspruchsvollere Kopplungen
+                // Ab Level 5: Volle, anspruchsvolle Zahnrad-Verschaltung
                 for(let i=0; i<4; i++) {
                     gearMatrix[i][i] = 1;
                     let neighbor = (i + 1) % 4;
@@ -552,8 +558,8 @@
 
             ringAngles = [3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2];
 
-            // In Level 1 nur minimale Schritte zum Mischen (z.B. max 2-3 leichte Drehungen)
-            const scrambleSteps = lvl === 1 ? 2 : (3 + Math.min(lvl, 6));
+            // Misterschritte langsam ansteigen lassen
+            const scrambleSteps = lvl === 1 ? 2 : (lvl === 2 ? 3 : Math.min(3 + Math.floor(lvl / 2), 7));
             solutionSteps = [];
 
             for(let s=0; s<scrambleSteps; s++) {
@@ -611,22 +617,27 @@
             hintClickCounter++;
 
             if (hintClickCounter % 2 === 1) {
+                // Gezielter Analyse-Tipp: Wer weicht am meisten ab und in welche Richtung?
                 let maxDiff = -1;
                 let worstRing = -1;
+                let directionText = "";
                 
                 ringAngles.forEach((a, idx) => {
                     let norm = a % (Math.PI * 2);
-                    let diff = Math.abs(norm - (3 * Math.PI / 2));
-                    if (diff > Math.PI) diff = Math.PI * 2 - diff;
-                    
-                    if (diff > maxDiff) {
-                        maxDiff = diff;
+                    let diff = norm - (3 * Math.PI / 2);
+                    if (diff > Math.PI) diff -= Math.PI * 2;
+                    if (diff < -Math.PI) diff += Math.PI * 2;
+
+                    let absDiff = Math.abs(diff);
+                    if (absDiff > maxDiff) {
+                        maxDiff = absDiff;
                         worstRing = idx + 1;
+                        directionText = diff > 0 ? "im Uhrzeigersinn" : "gegen den Uhrzeigersinn";
                     }
                 });
 
-                const ringNames = ["innerste Ring (Ring 1)", "zweite Ring von innen (Ring 2)", "dritte Ring von innen (Ring 3)", "äußerste Ring (Ring 4)"];
-                document.getElementById('hint-bar').innerText = `Tipp: Der ${ringNames[worstRing - 1]} weicht aktuell am stärksten ab!`;
+                const ringNames = ["innerste Ring (1)", "zweite Ring (2)", "dritte Ring (3)", "äußerste Ring (4)"];
+                document.getElementById('hint-bar').innerText = `Tipp: Der ${ringNames[worstRing - 1]} ist am weitesten weg – drehe ihn ${directionText}!`;
             } else {
                 const randomHint = genericHintList[Math.floor(Math.random() * genericHintList.length)];
                 document.getElementById('hint-bar').innerText = randomHint;
