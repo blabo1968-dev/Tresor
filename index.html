@@ -468,6 +468,7 @@
         let isSolved = false;
         let doorAngle = 0;
         let history = [];
+        let hintClickCounter = 0;
 
         const numRings = 4;
         const GRID_STEPS = 24; 
@@ -487,11 +488,13 @@
             { name: "Staatsanleihen-Safe Berlin", loot: "Wertvolle historische Staatsanleihen" }
         ];
 
-        const hintList = [
+        const genericHintList = [
             "Tipp: Konzentriere dich zuerst auf den innersten Ring und arbeite dich nach außen vor.",
             "Tipp: Achte darauf, wie sich gekoppelte Nachbarringe bei Drehungen entgegengesetzt bewegen.",
             "Tipp: Nutze den roten 12-Uhr-Pfeil als exakte Visierlinie für alle vier Kanäle.",
-            "Tipp: Wenige präzise Züge sichern dir die volle 3-Sterne-Prämie in der Chronik."
+            "Tipp: Wenn zwei Ringe parallel laufen, suche den Ring, der nur einen von beiden steuert.",
+            "Tipp: Nutze den 'Rückgängig'-Button, um Korrekturen ohne Abzug vorzunehmen.",
+            "Tipp: Manchmal lohnt es sich, einen Ring absichtlich falsch zu drehen, um den Nachbarn mitzunehmen."
         ];
 
         let particles = [];
@@ -516,6 +519,7 @@
             isSolved = false;
             doorAngle = 0;
             moves = 0;
+            hintClickCounter = 0;
             moveHistory = [];
             particles = [];
             closeModal('victory-modal');
@@ -524,20 +528,37 @@
             document.getElementById('hint-bar').innerText = "Tipp: Richte alle Ringe über den 12-Uhr-Pfeil aus.";
 
             gearMatrix = Array(4).fill(0).map(() => [0,0,0,0]);
-            for(let i=0; i<4; i++) {
-                gearMatrix[i][i] = 1;
-                let neighbor = (i + 1) % 4;
-                gearMatrix[i][neighbor] = (Math.random() > 0.5 ? 1 : -1) * (Math.random() > 0.5 ? 1 : 0.5);
+            
+            if (lvl === 1) {
+                // Extrem einfaches Setup für Level 1: Keine störenden Neben-Kopplungen, jeder Ring ist isoliert (nur sich selbst)
+                for(let i=0; i<4; i++) {
+                    gearMatrix[i][i] = 1;
+                }
+            } else if (lvl === 2) {
+                // Sehr zahme Kopplung für Level 2
+                for(let i=0; i<4; i++) {
+                    gearMatrix[i][i] = 1;
+                    let neighbor = (i + 1) % 4;
+                    gearMatrix[i][neighbor] = 0.5;
+                }
+            } else {
+                // Ab Level 3 wie gewohnt anspruchsvollere Kopplungen
+                for(let i=0; i<4; i++) {
+                    gearMatrix[i][i] = 1;
+                    let neighbor = (i + 1) % 4;
+                    gearMatrix[i][neighbor] = (Math.random() > 0.5 ? 1 : -1) * (Math.random() > 0.5 ? 1 : 0.5);
+                }
             }
 
             ringAngles = [3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2];
 
-            const scrambleSteps = 3 + Math.min(lvl, 6);
+            // In Level 1 nur minimale Schritte zum Mischen (z.B. max 2-3 leichte Drehungen)
+            const scrambleSteps = lvl === 1 ? 2 : (3 + Math.min(lvl, 6));
             solutionSteps = [];
 
             for(let s=0; s<scrambleSteps; s++) {
                 let rIdx = Math.floor(Math.random() * 4);
-                let stepCount = (Math.floor(Math.random() * 3) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                let stepCount = (Math.floor(Math.random() * 2) + 1) * (Math.random() > 0.5 ? 1 : -1);
                 applyRotation(rIdx, stepCount * STEP_ANGLE, false);
                 solutionSteps.push({ ring: rIdx, angle: -stepCount * STEP_ANGLE });
             }
@@ -587,8 +608,29 @@
 
         function getHint() {
             if (isSolved) return;
-            const randomHint = hintList[Math.floor(Math.random() * hintList.length)];
-            document.getElementById('hint-bar').innerText = randomHint;
+            hintClickCounter++;
+
+            if (hintClickCounter % 2 === 1) {
+                let maxDiff = -1;
+                let worstRing = -1;
+                
+                ringAngles.forEach((a, idx) => {
+                    let norm = a % (Math.PI * 2);
+                    let diff = Math.abs(norm - (3 * Math.PI / 2));
+                    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+                    
+                    if (diff > maxDiff) {
+                        maxDiff = diff;
+                        worstRing = idx + 1;
+                    }
+                });
+
+                const ringNames = ["innerste Ring (Ring 1)", "zweite Ring von innen (Ring 2)", "dritte Ring von innen (Ring 3)", "äußerste Ring (Ring 4)"];
+                document.getElementById('hint-bar').innerText = `Tipp: Der ${ringNames[worstRing - 1]} weicht aktuell am stärksten ab!`;
+            } else {
+                const randomHint = genericHintList[Math.floor(Math.random() * genericHintList.length)];
+                document.getElementById('hint-bar').innerText = randomHint;
+            }
         }
 
         function checkSolution() {
