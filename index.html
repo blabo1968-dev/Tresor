@@ -30,7 +30,6 @@
             align-items: center;
         }
 
-        /* Top Header Bar */
         header {
             width: 100%;
             padding: 8px 14px;
@@ -83,7 +82,6 @@
             text-shadow: 0 1px 2px #000;
         }
 
-        /* Action Buttons */
         .btn-group {
             display: flex;
             gap: 6px;
@@ -123,7 +121,18 @@
             text-shadow: 0 1px 0 rgba(255,255,255,0.4);
         }
 
-        /* Main Game Canvas Container */
+        #company-banner {
+            width: 100%;
+            text-align: center;
+            padding: 6px 10px 2px 10px;
+            font-size: 0.9rem;
+            letter-spacing: 2.5px;
+            color: #f3e5ab;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-shadow: 0 2px 4px #000, 0 0 8px rgba(212, 175, 55, 0.4);
+        }
+
         #game-container {
             flex: 1;
             width: 100%;
@@ -139,7 +148,6 @@
             border-radius: 50%;
         }
 
-        /* Inline Hint Display Bar */
         #hint-bar {
             width: 100%;
             background: rgba(26, 20, 10, 0.95);
@@ -157,7 +165,6 @@
             text-shadow: 0 1px 2px #000;
         }
 
-        /* Footer Controls */
         footer {
             width: 100%;
             padding: 10px;
@@ -169,7 +176,6 @@
             z-index: 10;
         }
 
-        /* Overlays / Modals */
         .modal {
             display: none;
             position: fixed;
@@ -231,7 +237,6 @@
             color: #fff;
         }
 
-        /* Victory Specific Card */
         .victory-card {
             text-align: center;
         }
@@ -260,7 +265,6 @@
             margin: 10px 0;
         }
 
-        /* History Table */
         .history-table {
             width: 100%;
             border-collapse: collapse;
@@ -311,14 +315,16 @@
         </div>
     </header>
 
+    <div id="company-banner">Blankenhagen Spieleentwicklung</div>
+
     <div id="game-container">
         <canvas id="vaultCanvas"></canvas>
     </div>
 
-    <!-- Inline Hint Bar -->
     <div id="hint-bar">Tipp: Richte alle Ringe über den 12-Uhr-Pfeil aus.</div>
 
     <footer>
+        <button class="btn" onclick="resetToLevel1()">Level 1</button>
         <button class="btn" onclick="undoMove()">Rückgängig</button>
         <button class="btn" onclick="resetLevel()">Zurücksetzen</button>
         <button class="btn btn-gold" onclick="getHint()">Tipp</button>
@@ -362,6 +368,9 @@
             <br>
             <h3>Datenschutz (DSGVO)</h3>
             <p>Die Bestimmungen der Datenschutz-Grundverordnung (DSGVO) werden strikt eingehalten. Es werden keinerlei personenbezogene Daten erhoben, gespeichert oder an Dritte weitergegeben. Sämtlicher Spielfortschritt verbleibt ausschließlich lokal auf Ihrem Gerät.</p>
+            <div style="font-size: 0.8em; color: #8b6b23; margin-top: 15px; border-top: 1px solid #4a3b18; padding-top: 5px;">
+                Dieser Text wurde unter Zuhilfenahme einer Künstlichen Intelligenz erstellt und von einem Menschen überprüft.
+            </div>
         </div>
     </div>
 
@@ -461,7 +470,7 @@
         let history = [];
 
         const numRings = 4;
-        const GRID_STEPS = 24; // 24 discrete angular segments (15 degrees each)
+        const GRID_STEPS = 24; 
         const STEP_ANGLE = (Math.PI * 2) / GRID_STEPS;
 
         let ringAngles = [0, 0, 0, 0];
@@ -514,7 +523,6 @@
             document.getElementById('moves-display').innerText = moves;
             document.getElementById('hint-bar').innerText = "Tipp: Richte alle Ringe über den 12-Uhr-Pfeil aus.";
 
-            // Generate Gear Matrix
             gearMatrix = Array(4).fill(0).map(() => [0,0,0,0]);
             for(let i=0; i<4; i++) {
                 gearMatrix[i][i] = 1;
@@ -522,10 +530,8 @@
                 gearMatrix[i][neighbor] = (Math.random() > 0.5 ? 1 : -1) * (Math.random() > 0.5 ? 1 : 0.5);
             }
 
-            // Set all solved (3*PI/2 rad -> 12 o'clock)
             ringAngles = [3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2];
 
-            // Scramble using integer grid steps
             const scrambleSteps = 3 + Math.min(lvl, 6);
             solutionSteps = [];
 
@@ -549,7 +555,6 @@
                 let ratio = gearMatrix[ringIdx][j];
                 if (ratio !== 0) {
                     let newAngle = ringAngles[j] + deltaAngle * ratio;
-                    // Snap to discrete grid steps
                     let gridIndex = Math.round(newAngle / STEP_ANGLE);
                     ringAngles[j] = gridIndex * STEP_ANGLE;
                     
@@ -574,6 +579,12 @@
             startLevel(level);
         }
 
+        function resetToLevel1() {
+            level = 1;
+            startLevel(level);
+            saveProgress();
+        }
+
         function getHint() {
             if (isSolved) return;
             const randomHint = hintList[Math.floor(Math.random() * hintList.length)];
@@ -581,7 +592,7 @@
         }
 
         function checkSolution() {
-            const tolerance = 0.05; // Strict tolerance due to grid snapping
+            const tolerance = 0.05;
             let aligned = ringAngles.every(a => {
                 let norm = a % (Math.PI * 2);
                 let diff = Math.abs(norm - (3 * Math.PI / 2));
@@ -639,6 +650,49 @@
         function nextLevel() {
             level++;
             startLevel(level);
+        }
+
+        function saveProgress() {
+            localStorage.setItem('vault_level', level);
+            localStorage.setItem('vault_stars', totalStars);
+            localStorage.setItem('vault_history', JSON.stringify(history));
+        }
+
+        function loadProgress() {
+            const savedLevel = localStorage.getItem('vault_level');
+            const savedStars = localStorage.getItem('vault_stars');
+            const savedHistory = localStorage.getItem('vault_history');
+
+            if (savedLevel) level = parseInt(savedLevel);
+            if (savedStars) totalStars = parseInt(savedStars);
+            if (savedHistory) history = JSON.parse(savedHistory);
+
+            document.getElementById('stars-display').innerText = `${totalStars} ★`;
+            updateHistoryUI();
+        }
+
+        function updateHistoryUI() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            history.forEach(item => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `<td>Lvl ${item.level}: ${item.loot}</td><td>${item.moves}</td><td>${'★'.repeat(item.stars)}</td>`;
+                list.appendChild(tr);
+            });
+
+            document.getElementById('stat-total-vaults').innerText = history.length;
+            document.getElementById('stat-total-stars').innerText = `${totalStars} ★`;
+            
+            let avgEff = history.length > 0 ? Math.round(history.reduce((acc, cur) => acc + (cur.stars / 3), 0) / history.length * 100) : 0;
+            document.getElementById('stat-avg-efficiency').innerText = `${avgEff}%`;
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
         }
 
         // --- Drag Controls ---
@@ -773,6 +827,30 @@
             requestAnimationFrame(gameLoop);
         }
 
+        function drawVaultInterior(cx, cy, maxR) {
+            ctx.save();
+            let bg = ctx.createRadialGradient(cx, cy, 10, cx, cy, maxR);
+            bg.addColorStop(0, '#ffd700');
+            bg.addColorStop(0.3, '#b8860b');
+            bg.addColorStop(1, '#2c1d0c');
+            ctx.fillStyle = bg;
+            ctx.beginPath();
+            ctx.arc(cx, cy, maxR * 0.95, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#1a1005';
+            ctx.fillRect(cx - 50, cy - 70, 100, 140);
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(cx - 50, cy - 70, 100, 140);
+
+            ctx.fillStyle = '#ffd700';
+            ctx.font = 'bold 14px Georgia';
+            ctx.textAlign = 'center';
+            ctx.fillText("SCHATZKAMMER", cx, cy - 85);
+            ctx.restore();
+        }
+
         function draw12OClockArrow(cx, cy, maxR) {
             ctx.save();
             ctx.translate(cx, cy - maxR * 0.94);
@@ -825,7 +903,6 @@
             ctx.arc(0, 0, innerR + 1.5, 0, Math.PI * 2, true);
             ctx.fill();
 
-            // Segment Notch Engravings (aligned with GRID_STEPS)
             ctx.strokeStyle = '#2b1f07';
             ctx.lineWidth = 1.5;
             for (let k = 0; k < GRID_STEPS; k++) {
@@ -840,8 +917,7 @@
                 ctx.stroke();
             }
 
-            // CONSTANT PHYSICAL CHANNEL WIDTH FOR PERFECT ALIGNMENT ACROSS ALL RINGS
-            const constantPixelWidth = 22; // Fixed pixel width across all radii
+            const constantPixelWidth = 22;
             const channelWidth = constantPixelWidth / outerR;
             
             ctx.fillStyle = '#0a0805';
@@ -909,45 +985,11 @@
             ctx.restore();
         }
 
-        function drawVaultInterior(cx, cy, maxR) {
-            ctx.save();
-
-            let vGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, maxR * 0.95);
-            vGrad.addColorStop(0, '#4a0404');
-            vGrad.addColorStop(1, '#120101');
-            ctx.fillStyle = vGrad;
-            ctx.beginPath();
-            ctx.arc(cx, cy, maxR * 0.95, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#eab308';
-            ctx.strokeStyle = '#ca8a04';
-            ctx.lineWidth = 1;
-
-            for(let b=-2; b<=1; b++) {
-                ctx.fillRect(cx + b*26, cy + 10, 24, 12);
-                ctx.strokeRect(cx + b*26, cy + 10, 24, 12);
-            }
-            for(let b=-1; b<=0; b++) {
-                ctx.fillRect(cx + b*26 + 13, cy - 4, 24, 12);
-                ctx.strokeRect(cx + b*26 + 13, cy - 4, 24, 12);
-            }
-
-            ctx.fillStyle = '#15803d';
-            ctx.fillRect(cx - 70, cy + 20, 32, 16);
-            ctx.fillRect(cx + 40, cy + 20, 32, 16);
-
-            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx - 30, cy + 35, 8, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(cx + 30, cy + 35, 9, 0, Math.PI*2); ctx.fill();
-
-            ctx.restore();
-        }
-
         function updateAndDrawParticles() {
-            particles.forEach((p) => {
+            particles.forEach((p, idx) => {
                 p.x += p.vx;
                 p.y += p.vy;
-                p.vy += 0.16;
+                p.vy += 0.25;
                 p.rotation += p.vRot;
 
                 ctx.save();
@@ -956,55 +998,10 @@
                 ctx.fillStyle = p.color;
                 ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
                 ctx.restore();
-            });
-        }
 
-        function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        function saveProgress() {
-            localStorage.setItem('tresor_level', level);
-            localStorage.setItem('tresor_stars', totalStars);
-            localStorage.setItem('tresor_history', JSON.stringify(history));
-        }
-
-        function loadProgress() {
-            const savedLvl = localStorage.getItem('tresor_level');
-            const savedStars = localStorage.getItem('tresor_stars');
-            const savedHist = localStorage.getItem('tresor_history');
-
-            if (savedLvl) level = parseInt(savedLvl);
-            if (savedStars) totalStars = parseInt(savedStars);
-            if (savedHist) history = JSON.parse(savedHist);
-
-            document.getElementById('stars-display').innerText = `${totalStars} ★`;
-            updateHistoryUI();
-        }
-
-        function updateHistoryUI() {
-            document.getElementById('stat-total-vaults').innerText = history.length;
-            document.getElementById('stat-total-stars').innerText = `${totalStars} ★`;
-            
-            let avgEff = history.length > 0 
-                ? Math.round(history.reduce((a, b) => a + (b.stars / 3), 0) / history.length * 100) 
-                : 0;
-            document.getElementById('stat-avg-efficiency').innerText = `${avgEff}%`;
-
-            const list = document.getElementById('history-list');
-            list.innerHTML = '';
-            history.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.loot}</td>
-                    <td>${item.moves}</td>
-                    <td style="color:#ffd700">${'★'.repeat(item.stars)}</td>
-                `;
-                list.appendChild(row);
+                if (p.y > canvas.height + 50) {
+                    particles.splice(idx, 1);
+                }
             });
         }
 
