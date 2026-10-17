@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>1930s Vault Puzzle - Blankenhagen Spieleentwicklung</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            touch-action: manipulation;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #090807;
+            background-image: 
+                radial-gradient(circle at 50% 30%, #1c1712 0%, #080706 70%),
+                repeating-linear-gradient(45deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 4px);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #d4af37;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Top Header Bar */
+        header {
+            width: 100%;
+            padding: 8px 14px;
+            background: linear-gradient(180deg, #282119 0%, #14100c 80%, #090807 100%);
+            border-bottom: 2px solid #8b6b23;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 235, 175, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .title-container h1 {
+            font-size: 1.15rem;
+            letter-spacing: 2px;
+            color: #f3e5ab;
+            text-shadow: 0 2px 4px #000, 0 0 10px rgba(212, 175, 55, 0.3);
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .title-container h2 {
+            font-size: 0.65rem;
+            color: #a38137;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .stat-box {
+            background: linear-gradient(180deg, #18130e 0%, #0d0a07 100%);
+            border: 1px solid #6b521d;
+            box-shadow: inset 0 0 5px #000;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.72rem;
+            color: #a89472;
+        }
+
+        .stat-val {
+            color: #fff8dc;
+            font-weight: bold;
+            font-size: 0.95rem;
+            text-shadow: 0 1px 2px #000;
+        }
+
+        /* Action Buttons */
+        .btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #52401c 0%, #291f0c 100%);
+            border: 1px solid #b89235;
+            color: #fce8b3;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.25);
+            transition: all 0.15s ease;
+            text-shadow: 0 1px 2px #000;
+        }
+
+        .btn:hover {
+            border-color: #ffd700;
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.8), 0 0 8px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+            background: #1c1507;
+            box-shadow: inset 0 2px 4px #000;
+        }
+
+        .btn-gold {
+            background: linear-gradient(180deg, #d4af37 0%, #8b6b23 100%);
+            color: #1a1204;
+            border-color: #fff4bd;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        /* Main Game Canvas Container */
+        #game-container {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            box-shadow: 0 0 50px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8);
+            border-radius: 50%;
+        }
+
+        /* Inline Hint Display Bar */
+        #hint-bar {
+            width: 100%;
+            background: rgba(26, 20, 10, 0.95);
+            border-top: 1px solid #8b6b23;
+            border-bottom: 1px solid #8b6b23;
+            padding: 6px 12px;
+            text-align: center;
+            font-size: 0.82rem;
+            color: #f3e5ab;
+            min-height: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            text-shadow: 0 1px 2px #000;
+        }
+
+        /* Footer Controls */
+        footer {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(0deg, #241d16 0%, #100d0a 80%, transparent 100%);
+            border-top: 1px solid #5c4717;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        /* Overlays / Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 3, 2, 0.88);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1f1a14 0%, #0d0a08 100%);
+            border: 2px solid #a38137;
+            box-shadow: 0 0 35px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(212, 175, 55, 0.15);
+            border-radius: 8px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 22px;
+            color: #d1c7bd;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .modal-content h3 {
+            color: #f3e5ab;
+            border-bottom: 1px solid #6b521d;
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 1.1rem;
+            text-shadow: 0 2px 4px #000;
+        }
+
+        .modal-content p {
+            margin-bottom: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            cursor: pointer;
+            color: #d4af37;
+            font-weight: bold;
+            font-size: 1.4rem;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        /* Victory Specific Card */
+        .victory-card {
+            text-align: center;
+        }
+
+        .victory-card h3 {
+            color: #ffd700;
+            font-size: 1.4rem;
+        }
+
+        .loot-title {
+            font-size: 1.1rem;
+            color: #f3e5ab;
+            font-weight: bold;
+            margin: 10px 0 5px 0;
+        }
+
+        .loot-desc {
+            color: #eab308;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .star-rating {
+            font-size: 1.8rem;
+            color: #ffd700;
+            margin: 10px 0;
+        }
+
+        /* History Table */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.82rem;
+        }
+
+        .history-table th, .history-table td {
+            border: 1px solid #4a3b18;
+            padding: 7px 10px;
+            text-align: left;
+        }
+
+        .history-table th {
+            background: linear-gradient(180deg, #332712 0%, #1f180a 100%);
+            color: #f3e5ab;
+        }
+
+        .history-table tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .btn-next {
+            font-size: 1rem;
+            padding: 12px 24px;
+            letter-spacing: 1px;
+            margin-top: 15px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-container">
+            <h1>TRESOR-KNACKER</h1>
+            <h2>1930 EDITION</h2>
+        </div>
+        <div class="stats-group">
+            <div class="stat-box">Level<br><span id="level-display" class="stat-val">1</span></div>
+            <div class="stat-box">Züge<br><span id="moves-display" class="stat-val">0</span></div>
+            <div class="stat-box">Sterne<br><span id="stars-display" class="stat-val">0 ★</span></div>
+        </div>
+        <div class="btn-group">
+            <button class="btn" onclick="openModal('stats-modal')">Statistik</button>
+            <button class="btn" onclick="openModal('rules-modal')">Regeln</button>
+            <button class="btn" onclick="openModal('imprint-modal')">Impressum</button>
+        </div>
+    </header>
+
+    <div id="game-container">
+        <canvas id="vaultCanvas"></canvas>
+    </div>
+
+    <!-- Inline Hint Bar -->
+    <div id="hint-bar">Tipp: Richte alle Ringe über den 12-Uhr-Pfeil aus.</div>
+
+    <footer>
+        <button class="btn" onclick="undoMove()">Rückgängig</button>
+        <button class="btn" onclick="resetLevel()">Zurücksetzen</button>
+        <button class="btn btn-gold" onclick="getHint()">Tipp</button>
+    </footer>
+
+    <!-- Victory Overlay Modal -->
+    <div id="victory-modal" class="modal">
+        <div class="modal-content victory-card">
+            <h3>TRESOR GEKNACKT!</h3>
+            <p>Sie haben folgenden Tresor erfolgreich geöffnet:</p>
+            <div id="victory-vault-name" class="loot-title">Tresor-Name</div>
+            <div id="victory-loot-text" class="loot-desc">Beute-Beschreibung</div>
+            <div id="victory-stars" class="star-rating">★★★</div>
+            <p>Benötigte Züge: <strong id="victory-moves" style="color:#fff;">0</strong></p>
+            <button class="btn btn-gold btn-next" onclick="nextLevel()">NÄCHSTES LEVEL / NEUER TRESOR</button>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('rules-modal')">&times;</span>
+            <h3>Spielregeln & Mechanik</h3>
+            <p><strong>Ziel:</strong> Richte die leuchtend goldenen Durchgangskanäle aller 4 Messingringe exakt nach oben auf die <strong>12-Uhr-Pfeilmarkierung</strong> aus, um den Tresor zu entriegeln.</p>
+            <p><strong>Mechanische Zahnrad-Kopplung:</strong> Jeder Ring ist über ein inneres Zahnradgetriebe mit anderen Ringen verbunden. Wenn du einen Ring drehst, bewegen sich gekoppelte Nachbarringe mit!</p>
+            <p><strong>Bedienung:</strong> Greife einen beliebigen Ring mit der Maus oder dem Finger und drehe ihn kreisförmig in die gewünschte Richtung.</p>
+            <p><strong>Wertung:</strong> Je weniger Züge du benötigst, desto mehr Sterne (1 bis 3) erhältst du für deine Tresor-Chronik.</p>
+        </div>
+    </div>
+
+    <!-- Imprint Modal -->
+    <div id="imprint-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('imprint-modal')">&times;</span>
+            <h3>Impressum</h3>
+            <p><strong>Blankenhagen Spieleentwicklung</strong><br>
+            Jörg Blankenhagen<br>
+            Kanalstr. 31<br>
+            73614 Schorndorf</p>
+            <p>E-Mail: spieleentwicklung@freenet.de</p>
+            <br>
+            <h3>Datenschutz (DSGVO)</h3>
+            <p>Die Bestimmungen der Datenschutz-Grundverordnung (DSGVO) werden strikt eingehalten. Es werden keinerlei personenbezogene Daten erhoben, gespeichert oder an Dritte weitergegeben. Sämtlicher Spielfortschritt verbleibt ausschließlich lokal auf Ihrem Gerät.</p>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="stats-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('stats-modal')">&times;</span>
+            <h3>Tresor-Chronik & Statistik</h3>
+            <p>Geknackte Tresore: <strong id="stat-total-vaults" style="color:#fff;">0</strong></p>
+            <p>Gesammelte Sterne: <strong id="stat-total-stars" style="color:#ffd700;">0 ★</strong></p>
+            <p>Durchschnittliche Effizienz: <strong id="stat-avg-efficiency" style="color:#fff;">0%</strong></p>
+            
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Tresor / Inhalt</th>
+                        <th>Züge</th>
+                        <th>Sterne</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list">
+                    <!-- Dynamic entries -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- Web Audio Synthesizer ---
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playClick() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.04);
+
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.04);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.04);
+            }
+
+            playUnlock() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(90, now);
+                osc.frequency.exponentialRampToValueAtTime(25, now + 0.5);
+
+                gain.gain.setValueAtTime(0.45, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
+        const audio = new AudioEngine();
+
+        // --- Game Logic State ---
+        const canvas = document.getElementById('vaultCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let level = 1;
+        let moves = 0;
+        let totalStars = 0;
+        let isSolved = false;
+        let doorAngle = 0;
+        let history = [];
+
+        const numRings = 4;
+        const GRID_STEPS = 24; // 24 discrete angular segments (15 degrees each)
+        const STEP_ANGLE = (Math.PI * 2) / GRID_STEPS;
+
+        let ringAngles = [0, 0, 0, 0];
+        let solutionSteps = [];
+        let moveHistory = [];
+        let gearMatrix = [];
+
+        const vaultDetails = [
+            { name: "Aktienschatulle der Reichsbank", loot: "50.000 Reichsmark in Wertpapieren & Goldbarren" },
+            { name: "Juwelen-Kassette Fürstengold", loot: "Königliche Diamanten & Rubin-Kollier" },
+            { name: "Goldreserven der Bank von Frankreich", loot: "12 feingestempelte Goldbarren (999.9)" },
+            { name: "Smaragd-Schatulle 'Schwarzer Diamant'", loot: "Der seltene schwarze Diamant & Smaragde" },
+            { name: "Haupttresor der Dresdner Filiale", loot: "100.000 Reichsmark Bargeld & Bündel" },
+            { name: "Staatsanleihen-Safe Berlin", loot: "Wertvolle historische Staatsanleihen" }
+        ];
+
+        const hintList = [
+            "Tipp: Konzentriere dich zuerst auf den innersten Ring und arbeite dich nach außen vor.",
+            "Tipp: Achte darauf, wie sich gekoppelte Nachbarringe bei Drehungen entgegengesetzt bewegen.",
+            "Tipp: Nutze den roten 12-Uhr-Pfeil als exakte Visierlinie für alle vier Kanäle.",
+            "Tipp: Wenige präzise Züge sichern dir die volle 3-Sterne-Prämie in der Chronik."
+        ];
+
+        let particles = [];
+
+        function initGame() {
+            setupCanvasSize();
+            loadProgress();
+            startLevel(level);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function setupCanvasSize() {
+            const container = document.getElementById('game-container');
+            const size = Math.min(container.clientWidth - 20, container.clientHeight - 20, 520);
+            canvas.width = size;
+            canvas.height = size;
+        }
+
+        window.addEventListener('resize', setupCanvasSize);
+
+        function startLevel(lvl) {
+            isSolved = false;
+            doorAngle = 0;
+            moves = 0;
+            moveHistory = [];
+            particles = [];
+            closeModal('victory-modal');
+            document.getElementById('level-display').innerText = lvl;
+            document.getElementById('moves-display').innerText = moves;
+            document.getElementById('hint-bar').innerText = "Tipp: Richte alle Ringe über den 12-Uhr-Pfeil aus.";
+
+            // Generate Gear Matrix
+            gearMatrix = Array(4).fill(0).map(() => [0,0,0,0]);
+            for(let i=0; i<4; i++) {
+                gearMatrix[i][i] = 1;
+                let neighbor = (i + 1) % 4;
+                gearMatrix[i][neighbor] = (Math.random() > 0.5 ? 1 : -1) * (Math.random() > 0.5 ? 1 : 0.5);
+            }
+
+            // Set all solved (3*PI/2 rad -> 12 o'clock)
+            ringAngles = [3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2];
+
+            // Scramble using integer grid steps
+            const scrambleSteps = 3 + Math.min(lvl, 6);
+            solutionSteps = [];
+
+            for(let s=0; s<scrambleSteps; s++) {
+                let rIdx = Math.floor(Math.random() * 4);
+                let stepCount = (Math.floor(Math.random() * 3) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                applyRotation(rIdx, stepCount * STEP_ANGLE, false);
+                solutionSteps.push({ ring: rIdx, angle: -stepCount * STEP_ANGLE });
+            }
+        }
+
+        function applyRotation(ringIdx, deltaAngle, recordHistory = true) {
+            if (recordHistory) {
+                moveHistory.push([...ringAngles]);
+                moves++;
+                document.getElementById('moves-display').innerText = moves;
+                audio.playClick();
+            }
+
+            for(let j=0; j<4; j++) {
+                let ratio = gearMatrix[ringIdx][j];
+                if (ratio !== 0) {
+                    let newAngle = ringAngles[j] + deltaAngle * ratio;
+                    // Snap to discrete grid steps
+                    let gridIndex = Math.round(newAngle / STEP_ANGLE);
+                    ringAngles[j] = gridIndex * STEP_ANGLE;
+                    
+                    ringAngles[j] = ringAngles[j] % (Math.PI * 2);
+                    if (ringAngles[j] < 0) ringAngles[j] += Math.PI * 2;
+                }
+            }
+
+            checkSolution();
+        }
+
+        function undoMove() {
+            if (isSolved || moveHistory.length === 0) return;
+            ringAngles = moveHistory.pop();
+            moves--;
+            document.getElementById('moves-display').innerText = moves;
+            audio.playClick();
+        }
+
+        function resetLevel() {
+            if (isSolved) return;
+            startLevel(level);
+        }
+
+        function getHint() {
+            if (isSolved) return;
+            const randomHint = hintList[Math.floor(Math.random() * hintList.length)];
+            document.getElementById('hint-bar').innerText = randomHint;
+        }
+
+        function checkSolution() {
+            const tolerance = 0.05; // Strict tolerance due to grid snapping
+            let aligned = ringAngles.every(a => {
+                let norm = a % (Math.PI * 2);
+                let diff = Math.abs(norm - (3 * Math.PI / 2));
+                return diff < tolerance || Math.abs(diff - Math.PI * 2) < tolerance;
+            });
+
+            if (aligned && !isSolved) {
+                isSolved = true;
+                audio.playUnlock();
+                triggerVictory();
+            }
+        }
+
+        function triggerVictory() {
+            ringAngles = [3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2];
+
+            let stars = moves <= 6 ? 3 : (moves <= 10 ? 2 : 1);
+            totalStars += stars;
+            document.getElementById('stars-display').innerText = `${totalStars} ★`;
+
+            const currentVault = vaultDetails[(level - 1) % vaultDetails.length];
+            
+            document.getElementById('victory-vault-name').innerText = currentVault.name;
+            document.getElementById('victory-loot-text').innerText = `Sie haben ${currentVault.loot} erbeutet. Herzlichen Glückwunsch!`;
+            document.getElementById('victory-stars').innerText = '★'.repeat(stars);
+            document.getElementById('victory-moves').innerText = moves;
+
+            history.unshift({
+                level: level,
+                loot: currentVault.name,
+                moves: moves,
+                stars: stars
+            });
+            saveProgress();
+            updateHistoryUI();
+
+            for(let i=0; i<90; i++) {
+                particles.push({
+                    x: canvas.width/2,
+                    y: canvas.height/2,
+                    vx: (Math.random() - 0.5) * 9,
+                    vy: (Math.random() - 0.85) * 9,
+                    color: ['#ffd700', '#fff8dc', '#e6c619', '#60a5fa', '#f43f5e'][Math.floor(Math.random()*5)],
+                    size: 4 + Math.random()*7,
+                    rotation: Math.random()*Math.PI*2,
+                    vRot: (Math.random() - 0.5) * 0.2
+                });
+            }
+
+            setTimeout(() => {
+                openModal('victory-modal');
+            }, 800);
+        }
+
+        function nextLevel() {
+            level++;
+            startLevel(level);
+        }
+
+        // --- Drag Controls ---
+        let activeRing = -1;
+        let lastTouchAngle = 0;
+
+        function getAngleFromCenter(px, py) {
+            const rect = canvas.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            return Math.atan2(py - cy, px - cx);
+        }
+
+        function getRingFromRadius(px, py) {
+            const rect = canvas.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const dist = Math.hypot(px - cx, py - cy);
+            const maxR = canvas.width / 2;
+
+            for(let i=0; i<4; i++) {
+                let outer = maxR * (0.92 - i * 0.17);
+                let inner = maxR * (0.92 - (i + 1) * 0.17);
+                if (dist >= inner && dist <= outer) return i;
+            }
+            return -1;
+        }
+
+        function handleStart(e) {
+            if (isSolved) return;
+            audio.init();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            activeRing = getRingFromRadius(clientX, clientY);
+            if (activeRing !== -1) {
+                lastTouchAngle = getAngleFromCenter(clientX, clientY);
+            }
+        }
+
+        function handleMove(e) {
+            if (activeRing === -1 || isSolved) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            let currentAngle = getAngleFromCenter(clientX, clientY);
+            let delta = currentAngle - lastTouchAngle;
+
+            if (delta > Math.PI) delta -= Math.PI * 2;
+            if (delta < -Math.PI) delta += Math.PI * 2;
+
+            if (Math.abs(delta) >= STEP_ANGLE * 0.75) {
+                let steps = Math.round(delta / STEP_ANGLE);
+                if (steps !== 0) {
+                    applyRotation(activeRing, steps * STEP_ANGLE);
+                    lastTouchAngle = currentAngle;
+                }
+            }
+        }
+
+        function handleEnd() {
+            activeRing = -1;
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        canvas.addEventListener('touchstart', handleStart, {passive: true});
+        canvas.addEventListener('touchmove', handleMove, {passive: true});
+        window.addEventListener('touchend', handleEnd);
+
+        // --- RENDERING ENGINE ---
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const maxR = canvas.width / 2;
+
+            if (doorAngle > 0) {
+                drawVaultInterior(cx, cy, maxR);
+            }
+
+            ctx.save();
+            if (isSolved && doorAngle < Math.PI * 0.78) {
+                doorAngle += 0.022;
+            }
+
+            if (doorAngle > 0) {
+                ctx.translate(cx - maxR * 0.9, cy);
+                ctx.rotate(-doorAngle);
+                ctx.translate(-(cx - maxR * 0.9), -cy);
+            }
+
+            let outerBg = ctx.createRadialGradient(cx, cy, maxR * 0.5, cx, cy, maxR);
+            outerBg.addColorStop(0, '#2e261f');
+            outerBg.addColorStop(0.7, '#17130f');
+            outerBg.addColorStop(1, '#090705');
+            ctx.fillStyle = outerBg;
+            ctx.beginPath();
+            ctx.arc(cx, cy, maxR * 0.98, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#080605';
+            ctx.strokeStyle = '#6b5428';
+            ctx.lineWidth = 1.5;
+            for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+                let rx = cx + Math.cos(a) * (maxR * 0.95);
+                let ry = cy + Math.sin(a) * (maxR * 0.95);
+                ctx.beginPath();
+                ctx.arc(rx, ry, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            for (let i = 3; i >= 0; i--) {
+                let outerR = maxR * (0.92 - i * 0.17);
+                let innerR = maxR * (0.92 - (i + 1) * 0.17);
+                drawHighFidelityBrassRing(cx, cy, outerR, innerR, ringAngles[i], i);
+            }
+
+            drawCenterHub(cx, cy, maxR * 0.24);
+            draw12OClockArrow(cx, cy, maxR);
+
+            ctx.restore();
+
+            if (isSolved) {
+                updateAndDrawParticles();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function draw12OClockArrow(cx, cy, maxR) {
+            ctx.save();
+            ctx.translate(cx, cy - maxR * 0.94);
+
+            ctx.fillStyle = '#ef4444';
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(0, 18);
+            ctx.lineTo(-12, 0);
+            ctx.lineTo(-5, 0);
+            ctx.lineTo(-5, -12);
+            ctx.lineTo(5, -12);
+            ctx.lineTo(5, 0);
+            ctx.lineTo(12, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawHighFidelityBrassRing(cx, cy, outerR, innerR, angle, ringIndex) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+            ctx.shadowBlur = 10;
+
+            ctx.beginPath();
+            ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+            ctx.arc(0, 0, innerR, 0, Math.PI * 2, true);
+            ctx.fillStyle = '#120e0a';
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.rotate(angle);
+
+            let brassGrad = ctx.createRadialGradient(0, 0, innerR, 0, 0, outerR);
+            brassGrad.addColorStop(0, '#4a3814');
+            brassGrad.addColorStop(0.15, '#a88332');
+            brassGrad.addColorStop(0.5, '#fce7a4');
+            brassGrad.addColorStop(0.85, '#8a6820');
+            brassGrad.addColorStop(1, '#36270b');
+
+            ctx.fillStyle = brassGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, outerR - 1.5, 0, Math.PI * 2);
+            ctx.arc(0, 0, innerR + 1.5, 0, Math.PI * 2, true);
+            ctx.fill();
+
+            // Segment Notch Engravings (aligned with GRID_STEPS)
+            ctx.strokeStyle = '#2b1f07';
+            ctx.lineWidth = 1.5;
+            for (let k = 0; k < GRID_STEPS; k++) {
+                let na = STEP_ANGLE * k;
+                let x1 = Math.cos(na) * (innerR + 2);
+                let y1 = Math.sin(na) * (innerR + 2);
+                let x2 = Math.cos(na) * (outerR - 2);
+                let y2 = Math.sin(na) * (outerR - 2);
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            // CONSTANT PHYSICAL CHANNEL WIDTH FOR PERFECT ALIGNMENT ACROSS ALL RINGS
+            const constantPixelWidth = 22; // Fixed pixel width across all radii
+            const channelWidth = constantPixelWidth / outerR;
+            
+            ctx.fillStyle = '#0a0805';
+            ctx.beginPath();
+            ctx.arc(0, 0, outerR - 1, -channelWidth/2, channelWidth/2);
+            ctx.arc(0, 0, innerR + 1, channelWidth/2, -channelWidth/2, true);
+            ctx.fill();
+
+            let goldHighlight = ctx.createLinearGradient(
+                Math.cos(-channelWidth/2)*innerR, Math.sin(-channelWidth/2)*innerR,
+                Math.cos(channelWidth/2)*outerR, Math.sin(channelWidth/2)*outerR
+            );
+            goldHighlight.addColorStop(0, '#ffd700');
+            goldHighlight.addColorStop(0.5, '#ffffff');
+            goldHighlight.addColorStop(1, '#cca112');
+
+            ctx.fillStyle = goldHighlight;
+            ctx.beginPath();
+            ctx.arc(0, 0, outerR - 2, -channelWidth/4, channelWidth/4);
+            ctx.arc(0, 0, innerR + 2, channelWidth/4, -channelWidth/4, true);
+            ctx.fill();
+
+            ctx.strokeStyle = '#d4af37';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(0, 0, outerR - 1, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, innerR + 1, 0, Math.PI * 2); ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawCenterHub(cx, cy, r) {
+            ctx.save();
+            ctx.translate(cx, cy);
+
+            let hubGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
+            hubGrad.addColorStop(0, '#fce7a4');
+            hubGrad.addColorStop(0.5, '#8b6b23');
+            hubGrad.addColorStop(1, '#1a1205');
+
+            ctx.fillStyle = hubGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#120d04';
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#a88332';
+            ctx.stroke();
+
+            ctx.strokeStyle = '#d4af37';
+            ctx.lineWidth = 3;
+            for(let i=0; i<3; i++) {
+                let sa = ((Math.PI * 2) / 3) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(sa)*(r*0.85), Math.sin(sa)*(r*0.85));
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawVaultInterior(cx, cy, maxR) {
+            ctx.save();
+
+            let vGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, maxR * 0.95);
+            vGrad.addColorStop(0, '#4a0404');
+            vGrad.addColorStop(1, '#120101');
+            ctx.fillStyle = vGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, maxR * 0.95, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#eab308';
+            ctx.strokeStyle = '#ca8a04';
+            ctx.lineWidth = 1;
+
+            for(let b=-2; b<=1; b++) {
+                ctx.fillRect(cx + b*26, cy + 10, 24, 12);
+                ctx.strokeRect(cx + b*26, cy + 10, 24, 12);
+            }
+            for(let b=-1; b<=0; b++) {
+                ctx.fillRect(cx + b*26 + 13, cy - 4, 24, 12);
+                ctx.strokeRect(cx + b*26 + 13, cy - 4, 24, 12);
+            }
+
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(cx - 70, cy + 20, 32, 16);
+            ctx.fillRect(cx + 40, cy + 20, 32, 16);
+
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(cx - 30, cy + 35, 8, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.arc(cx + 30, cy + 35, 9, 0, Math.PI*2); ctx.fill();
+
+            ctx.restore();
+        }
+
+        function updateAndDrawParticles() {
+            particles.forEach((p) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.16;
+                p.rotation += p.vRot;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                ctx.restore();
+            });
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function saveProgress() {
+            localStorage.setItem('tresor_level', level);
+            localStorage.setItem('tresor_stars', totalStars);
+            localStorage.setItem('tresor_history', JSON.stringify(history));
+        }
+
+        function loadProgress() {
+            const savedLvl = localStorage.getItem('tresor_level');
+            const savedStars = localStorage.getItem('tresor_stars');
+            const savedHist = localStorage.getItem('tresor_history');
+
+            if (savedLvl) level = parseInt(savedLvl);
+            if (savedStars) totalStars = parseInt(savedStars);
+            if (savedHist) history = JSON.parse(savedHist);
+
+            document.getElementById('stars-display').innerText = `${totalStars} ★`;
+            updateHistoryUI();
+        }
+
+        function updateHistoryUI() {
+            document.getElementById('stat-total-vaults').innerText = history.length;
+            document.getElementById('stat-total-stars').innerText = `${totalStars} ★`;
+            
+            let avgEff = history.length > 0 
+                ? Math.round(history.reduce((a, b) => a + (b.stars / 3), 0) / history.length * 100) 
+                : 0;
+            document.getElementById('stat-avg-efficiency').innerText = `${avgEff}%`;
+
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            history.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.loot}</td>
+                    <td>${item.moves}</td>
+                    <td style="color:#ffd700">${'★'.repeat(item.stars)}</td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
