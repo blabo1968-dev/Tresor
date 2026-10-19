@@ -82,17 +82,12 @@
             text-shadow: 0 1px 2px #000;
         }
 
-        .btn-group {
-            display: flex;
-            gap: 6px;
-        }
-
         .btn {
             background: linear-gradient(180deg, #52401c 0%, #291f0c 100%);
             border: 1px solid #b89235;
             color: #fce8b3;
-            padding: 6px 12px;
-            font-size: 0.78rem;
+            padding: 6px 10px;
+            font-size: 0.72rem;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
@@ -167,13 +162,20 @@
 
         footer {
             width: 100%;
-            padding: 10px;
+            padding: 8px 6px;
             background: linear-gradient(0deg, #241d16 0%, #100d0a 80%, transparent 100%);
             border-top: 1px solid #5c4717;
             display: flex;
-            justify-content: center;
-            gap: 12px;
+            flex-direction: column;
+            gap: 6px;
             z-index: 10;
+        }
+
+        .footer-row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .modal {
@@ -308,11 +310,6 @@
             <div class="stat-box">Züge<br><span id="moves-display" class="stat-val">0</span></div>
             <div class="stat-box">Sterne<br><span id="stars-display" class="stat-val">0 ★</span></div>
         </div>
-        <div class="btn-group">
-            <button class="btn" onclick="openModal('stats-modal')">Statistik</button>
-            <button class="btn" onclick="openModal('rules-modal')">Regeln</button>
-            <button class="btn" onclick="openModal('imprint-modal')">Impressum</button>
-        </div>
     </header>
 
     <div id="company-banner">Blankenhagen Spieleentwicklung</div>
@@ -324,10 +321,17 @@
     <div id="hint-bar">Tipp: Richte alle Ringe über den 12-Uhr-Pfeil aus.</div>
 
     <footer>
-        <button class="btn" onclick="resetToLevel1()">Level 1</button>
-        <button class="btn" onclick="undoMove()">Rückgängig</button>
-        <button class="btn" onclick="resetLevel()">Zurücksetzen</button>
-        <button class="btn btn-gold" onclick="getHint()">Tipp</button>
+        <div class="footer-row">
+            <button class="btn" onclick="resetToLevel1()">Level 1</button>
+            <button class="btn" onclick="undoMove()">Rückgängig</button>
+            <button class="btn" onclick="resetLevel()">Zurücksetzen</button>
+            <button class="btn btn-gold" onclick="getHint()">Tipp</button>
+        </div>
+        <div class="footer-row">
+            <button class="btn" onclick="openModal('stats-modal')">Statistik</button>
+            <button class="btn" onclick="openModal('rules-modal')">Regeln</button>
+            <button class="btn" onclick="openModal('imprint-modal')">Impressum</button>
+        </div>
     </footer>
 
     <!-- Victory Overlay Modal -->
@@ -527,28 +531,23 @@
 
             gearMatrix = Array(4).fill(0).map(() => [0,0,0,0]);
             
-            // Level-basierte, kontrollierte Schwierigkeitssteigerung
             if (lvl === 1) {
-                // Level 1: Vollständig isolierte Ringe (keine Kopplung)
                 for(let i=0; i<4; i++) {
                     gearMatrix[i][i] = 1;
                 }
             } else if (lvl === 2) {
-                // Level 2: Sehr sanfte Kopplung zum Nachbarn
                 for(let i=0; i<4; i++) {
                     gearMatrix[i][i] = 1;
                     let neighbor = (i + 1) % 4;
                     gearMatrix[i][neighbor] = 0.5;
                 }
             } else if (lvl <= 4) {
-                // Level 3-4: Moderate Kopplung
                 for(let i=0; i<4; i++) {
                     gearMatrix[i][i] = 1;
                     let neighbor = (i + 1) % 4;
                     gearMatrix[i][neighbor] = (i % 2 === 0 ? 0.5 : -0.5);
                 }
             } else {
-                // Ab Level 5: Volle, anspruchsvolle Zahnrad-Verschaltung
                 for(let i=0; i<4; i++) {
                     gearMatrix[i][i] = 1;
                     let neighbor = (i + 1) % 4;
@@ -558,7 +557,6 @@
 
             ringAngles = [3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2, 3*Math.PI/2];
 
-            // Misterschritte langsam ansteigen lassen
             const scrambleSteps = lvl === 1 ? 2 : (lvl === 2 ? 3 : Math.min(3 + Math.floor(lvl / 2), 7));
             solutionSteps = [];
 
@@ -617,7 +615,6 @@
             hintClickCounter++;
 
             if (hintClickCounter % 2 === 1) {
-                // Gezielter Analyse-Tipp: Wer weicht am meisten ab und in welche Richtung?
                 let maxDiff = -1;
                 let worstRing = -1;
                 let directionText = "";
